@@ -7,8 +7,8 @@ class RF:
         """
         Brinda equivalencias para las mediciones de potencias.
         :param  valor:      numeric (integer or float).
-        :param  unidad_in:  str. Posibilidades: dBm, W, mW, uW, nW, pW.
-        :param  unidad_out: str. default = None. Posibilidades: dBm, W, mW, uW, nW, pW.
+        :param  unidad_in:  str. Posibilidades: dBm, W, mW, uW.
+        :param  unidad_out: str. default = None. Posibilidades: dBm, W, mW, uW.
         :param  ret:        bool. True si quiero return numérico y no quiero imprimir. False en caso contrario.
                
         :return:    Si ret == True y unidad_out != None, se devuelve el valor. np.float64.
@@ -21,21 +21,23 @@ class RF:
         except Exception as e:
             print('@param "valor" no es numerico.\nException:', e)
         
-        unidad_in = unidad_in.strip()
+        unidad_in = unidad_in.strip().lower()
         # Cálculo de todo a mW, para mantener el código corto
-        if unidad_in == 'dBm':
+        if unidad_in == 'dbm':
             mW = 10**(valor/10)
-        elif unidad_in == 'W':
+            unidad_in = 'dBm'
+        elif unidad_in == 'w':
             mW = valor*1000
-        elif unidad_in == 'mW':
+            unidad_in = 'W'
+        elif unidad_in == 'mw':
             mW = valor
-        elif unidad_in == 'uW':
+            unidad_in = 'mW'
+        elif unidad_in == 'uw':
             mW = valor/1000
-        elif unidad_in == 'pW':
-            mW = valor/1000000
+            unidad_in = 'uW'
         # Si no se escribió ninguna unidad de entrada válida
         else:
-            print('El segundo parámetro (unidad_in) no es correcto. Puede ser: "dBm", "W", "mW", "uW", "pW".')
+            print('El segundo parámetro (unidad_in) no es correcto. Puede ser: "dBm", "W", "mW", "uW".')
             return False
         
         # Cáculo de mW al resto de las unidades
@@ -58,13 +60,11 @@ class RF:
                 return mW
             elif unidad_out == 'uW':
                 return uW
-            elif unidad_out == 'pW':
-                return pW
             elif unidad_out == None:
-                return (dBm, 'dBm'), (W, 'W'), (mW, 'mW'), (uW, 'uW'), (pW, 'pW')
+                return (dBm, 'dBm'), (W, 'W'), (mW, 'mW'), (uW, 'uW')
             # Si no se escribió ninguna unidad de salida válida
             else:
-                print('El parámetro unidad_out no es correcto. Puede ser: "dBm", "W", "mW", "uW", "pW" o dejarse por default ("None").')
+                print('El parámetro unidad_out no es correcto. Puede ser: "dBm", "W", "mW", "uW" o dejarse por default ("None").')
                 return False
             
         elif ret == False:
@@ -77,13 +77,11 @@ class RF:
                 print('%f [%s] = %f [mW]' %(valor, unidad_in, mW))
             elif unidad_out == 'uW':
                 print('%f [%s] = %f [uW]' %(valor, unidad_in, uW))
-            elif unidad_out == 'pW':
-                print('%f [%s] = %f [pW]' %(valor, unidad_in, pW))
             elif unidad_out == None:
                 print('%f [dBm] = %f [W] = %f [mW] = %f [uW] = %f [pW]' %(dBm, W, mW, uW, pW))
             # Si no se escribió ninguna unidad de salida válida
             else:
-                print('El parámetro unidad_out no es correcto. Puede ser: "dBm", "W", "mW", "uW", "pW" o dejarse por default ("None").')
+                print('El parámetro unidad_out no es correcto. Puede ser: "dBm", "W", "mW", "uW" o dejarse por default ("None").')
                 return False
         
         else:
@@ -92,23 +90,78 @@ class RF:
     
     
     
-    def equiv_ganancia(self, valor, unidad_in, unidad_out=None, ret=False):
+    def equiv_ganancia(self, valor, unidad_in, ret=False):
+        """
+        Uso de la equivalencia de Veces a dB y viceversa para potencia (multiplica x10 en vez de x20 (voltaje)).
+        :param  valor:      numeric (integer or float).
+        :param  unidad_in:  str. Posibilidades: dB o Veces.
+        :param  ret:        bool. True si quiero return numérico y no quiero imprimir. False en caso contrario.
+               
+        :return:    Si ret == True se devuelve el valor. np.float64.
+                    Si ret == False, se imprime el valor.
+        """
         try:
             # Convierte el valor de str a np.float64
             valor = np.float64(valor)
         except Exception as e:
             print('@param "valor" no es numerico.\nException:', e)
         
-        unidad_in = unidad_in.strip()
-        # Cálculo de todo a mW, para mantener el código corto    
-        if unidad_in == 'dB':
-            veces = 
+        unidad_in = unidad_in.strip().lower()  
+        if unidad_in == 'db':
+            unidad_in = 'dB'
+            unidad_out = 'Veces'
+            dB = valor
+            veces = 10**(dB/10)
+        elif unidad_in == 'veces':
+            unidad_in = 'Veces'
+            unidad_out = 'dB'
+            veces = valor
+            dB = 10 * np.log10(veces)
+        # Si no se escribió ninguna unidad de entrada válida
+        else:
+            print('El segundo parámetro (unidad_in) no es correcto. Puede ser: "dB" o "Veces".')                  
+            return False
+        
+        if ret == True:
+            # No se imprime, sino que se devuelve el valor
+            if unidad_in == 'dB':
+                return veces
+            elif unidad_in == 'Veces':
+                return dB
+            # Si no se escribió ninguna unidad de salida válida
+            else:
+                print('El segundo parámetro (unidad_in) no es correcto. Puede ser: "dB" o "Veces".')
+                return False
+            
+        elif ret == False:
+            # Se imprime, no se devuelve el valor
+            if unidad_in == 'dB':
+                print('%f [%s] = %f [Veces]' %(dB, unidad_in, veces))
+            elif unidad_in == 'Veces':
+                print('%f [%s] = %f [dB]' %(veces, unidad_in, dB))
+            # Si no se escribió ninguna unidad de salida válida
+            else:
+                print('El segundo parámetro (unidad_in) no es correcto. Puede ser: "dB" o "Veces".')
+                return False    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     
     def test(self):
-        resultado = self.__test_equiv_potencia()
+        resultado = True
+        resultado = resultado and self.__test_equiv_potencia()
+        resultado = resultado and self.__test_equiv_ganancia()
         return resultado
     
     def __test_equiv_potencia(self):
@@ -116,10 +169,29 @@ class RF:
         # Si la diferencia entre el valor calculado y esperado es mayor a la tolerancia atol=1e-3, no pasa el test
         if not np.allclose(self.equiv_potencia(0, 'dBm', 'mW', True), np.float64(1.0), rtol=0, atol=1e-3):
             resultado = False
-        if not np.allclose(self.equiv_potencia(10, 'dBm', 'mW', True), np.float64(10.0), rtol=0, atol=1e-3):
-            resultado = False
         if not np.allclose(self.equiv_potencia(15, 'dBm', 'mW', True), np.float64(31.622776602), rtol=0, atol=1e-3):
             resultado = False
         if not np.allclose(self.equiv_potencia(-30, 'dBm', 'mW', True), np.float64(0.001), rtol=0, atol=1e-3):
             resultado = False
+        if not np.allclose(self.equiv_potencia(10, 'mW', 'W', True), np.float64(0.01), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_potencia(0.2, 'W', 'uW', True), np.float64(200000), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_potencia(120, 'uW', 'dBm', True), np.float64(-9.2081875395), rtol=0, atol=1e-3):
+            resultado = False
         return resultado
+    
+    def __test_equiv_ganancia(self):
+        resultado = True
+        # Si la diferencia entre el valor calculado y esperado es mayor a la tolerancia atol=1e-3, no pasa el test
+        if not np.allclose(self.equiv_ganancia(0, 'dB', True), np.float64(1.0), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_ganancia(28, 'dB ', True), np.float64(630.957344480193), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_ganancia(-30, 'db', True), np.float64(0.001), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_ganancia(10, 'Veces', True), np.float64(10), rtol=0, atol=1e-3):
+            resultado = False
+        if not np.allclose(self.equiv_ganancia(10, 'veces ', True), np.float64(10), rtol=0, atol=1e-3):
+            resultado = False
+        return resultado        
