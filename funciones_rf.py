@@ -78,7 +78,7 @@ class RF:
             elif unidad_out == 'uW':
                 print('%f [%s] = %f [uW]' %(valor, unidad_in, uW))
             elif unidad_out == None:
-                print('%f [dBm] = %f [W] = %f [mW] = %f [uW] = %f [pW]' %(dBm, W, mW, uW, pW))
+                print('%f [dBm] = %f [W] = %f [mW] = %f [uW]' %(dBm, W, mW, uW))
             # Si no se escribió ninguna unidad de salida válida
             else:
                 print('El parámetro unidad_out no es correcto. Puede ser: "dBm", "W", "mW", "uW" o dejarse por default ("None").')
@@ -146,8 +146,100 @@ class RF:
     
     
     
-    
-    
+    def equiv_RL_VSWR_Z(self, valor, medida_in, medida_out=None, ret=False):
+        """
+        Uso de la equivalencia de Pérdida de Retorno (dB) a VSWR a Impedancia (Ohm) a Coeficiente de Reflexión.
+        Impedancia de referencia Z0 = 50 Ohm
+        :param  valor:      numeric (integer or float).
+        :param  medida_in:  str. Posibilidades: RL, VSWR, ZL, Gamma.
+        :param  medida_out: str. default = None. Posibilidades: RL, VSWR, ZL, Gamma.
+        :param  ret:        bool. True si quiero return numérico y no quiero imprimir. False en caso contrario.
+               
+        :return:    Si ret == True y medida_out != None, se devuelve el valor. np.float64.
+                    Si ret == False, se imprime el valor.
+                    Si ret == True y medida_out == None. Se devuelve una tupla con todos los valores.
+        """        
+        try:
+            # Convierte el valor de str a np.float64
+            valor = np.float64(valor)
+        except Exception as e:
+            print('@param "valor" no es numerico.\nException:', e)
+        # Impedancia de referencia
+        z0 = 50
+        medida_in = medida_in.strip().lower()
+        # Cálculo de todo a Coeficiente de Reflexión(Gamma), para mantener el código corto
+        try:
+            if medida_in == 'gamma':
+                if valor < -1 or valor > 1:
+                    print('Error: 0 < gamma < 1')
+                gamma = valor
+                medida_in = 'Gamma'
+            elif medida_in == 'vswr':
+                vswr = valor
+                gamma = np.abs((vswr-1)/(vswr+1))
+                medida_in = 'VSWR'
+            elif medida_in == 'zl' or medida_in == 'zl(ohm)' or medida_in == 'zl[ohm]':
+                zl = valor
+                gamma = np.abs((zl-z0)/(zl+z0))
+                medida_in = 'ZL[Ohm]'
+            elif medida_in == 'rl' or medida_in == 'rl(db)' or medida_in == 'rl[db]':
+                rl = valor
+                gamma = np.abs(10**(-np.abs(rl)/20))
+                medida_in = 'RL[dB]'
+            # Si no se escribió ninguna medida de entrada válida
+            else:
+                print('El segundo parámetro (medida_in) no es correcto. Puede ser: "Gamma", "VSWR", "ZL", "RL".')
+                return False
+            
+            # Cáculo de Coeficiente de Reflexión al resto de las unidades
+            vswr = (1 + gamma) / (1 - gamma)
+            zl_1 = z0 * (1+gamma) / (1-gamma)
+            zl_2 = z0 * (1-gamma) / (1+gamma)
+            rl = -20 * np.log10(gamma)
+        except:
+            # La excepción es la división por cero
+            pass
+        # Selección de los returns y los datos de salida  
+        if medida_out != None:
+            medida_out = unidad_out.strip()
+        
+        if ret == True:
+            # No se imprime, sino que se devuelve el valor
+            if medida_out == 'VSWR':
+                return vswr
+            elif medida_out == 'ZL[Ohm]':
+                return zl_1, zl_2
+            elif medida_out == 'RL[dB]':
+                return rl
+            elif medida_out == 'Gamma':
+                return gamma
+            elif medida_out == None:
+                return (vswr, 'VSWR'), (zl_1, zl_2, 'ZL[Ohm]'), (rl, 'RL[dB]'), (gamma, 'Gamma')
+            # Si no se escribió ninguna unidad de salida válida
+            else:
+                print('El parámetro medida_out no es correcto. Puede ser: "Gamma", "VSWR", "ZL", "RL" o dejarse por default ("None").')
+                return False
+            
+        elif ret == False:
+            # Se imprime, no se devuelve el valor
+            if medida_out == 'VSWR':
+                print('%f [%s] = %f (VSWR)' %(valor, medida_in, vswr))
+            elif medida_out == 'ZL[Ohm]':
+                print('%f [%s] = %f [Ohm] == %f [Ohm]' %(valor, medida_in, zl_1, zl_2))
+            elif medida_out == 'RL[dB]':
+                print('%f [%s] = %f [dB]' %(valor, medida_in, rl))
+            elif medida_out == 'Gamma':
+                print('%f [%s] = %f (Gamma)' %(valor, medida_in, gamma))
+            elif medida_out == None:
+                print('%f (VSWR) = %f [Ohm] == %f [Ohm] = %f [dB] = %f (Gamma)' %(vswr, zl_1, zl_2, rl, gamma))
+            # Si no se escribió ninguna unidad de salida válida
+            else:
+                print('El parámetro medida_out no es correcto. Puede ser: "Gamma", "VSWR", "ZL", "RL" o dejarse por default ("None").')
+                return False
+        
+        else:
+            print('El parámetro ret no es correcto. Puede ser: "True", "False" o dejarse por default ("False").')
+            return False    
     
     
     
