@@ -146,7 +146,7 @@ class RF:
     
     
     
-    def equiv_RL_VSWR_Z(self, valor, medida_in, medida_out=None, ret=False):
+    def equiv_RL_VSWR_Z_Gamma(self, valor, medida_in, medida_out=None, ret=False):
         """
         Uso de la equivalencia de Pérdida de Retorno (dB) a VSWR a Impedancia (Ohm) a Coeficiente de Reflexión.
         Impedancia de referencia Z0 = 50 Ohm
@@ -243,13 +243,74 @@ class RF:
     
     
     
+    def microtira_analisis(self, w, Er, h, l=0, t=0, unidad='mm'):
+        """ Fórmulas de Hammerstad para análisis """
+        try:
+            # Convierte el w de str a np.float64
+            w = np.float64(w)
+        except Exception as e:
+            print('@param "w" no es numerico.\nException:', e)
+        try:
+            # Convierte el l de str a np.float64
+            l = np.float64(l)
+        except Exception as e:
+            print('@param "l" no es numerico.\nException:', e)
+        try:
+            # Convierte Er de str a np.float64
+            Er = np.float64(Er)
+        except Exception as e:
+            print('@param "Er" no es numerico.\nException:', e)
+        try:
+            # Convierte el h de str a np.float64
+            h = np.float64(h)
+        except Exception as e:
+            print('@param "h" no es numerico.\nException:', e)
+        try:
+            # Convierte el t de str a np.float64
+            t = np.float64(t)
+        except Exception as e:
+            print('@param "t" no es numerico.\nException:', e)
+        # Impedancia de referencia
+        z0 = 50
+        unidad = unidad.strip().lower()
+        """
+        if unidad == 'mil' or unidad == 'mils':
+            w = self.mil_a_mm(w)
+            l = self.mil_a_mm(l)
+            h = self.mil_a_mm(h)
+            t = self.mil_a_mm(t)
+        elif unidad == 'mm':
+            pass
+        else:
+            print('@param "unidad" no es válido. Las opciones posibles son mil y mm (default)')
+            return False
+        """
+        # Cálculo de la impedancia
+        if w/h < 1:
+            Er_prima = (Er+1)/2 + (Er-1)/2 * ((1/np.sqrt(1+12*h/w)) + 0.04*(1-w/h)**2)
+            z0 = 60/np.sqrt(Er_prima) * np.log(8*h/w + w/(4*h))
+        else: #w/h >= 1
+            Er_prima = (Er+1)/2 + (Er-1)/2 * (1/np.sqrt(1+12*h/w))
+            z0 = 120*np.pi/np.sqrt(Er_prima) / (w/h + 1.393 + 0.667*np.log(1.444 + w/h))
+
+        print('Z0 = %f' %(z0))
     
+        
     
-    
-    
-    
-    
-    
+    def mil_a_mm(self, mil):
+        """ 
+        Calcula el equivalente en mm de X mils 
+        :param mil: numeric, la longitud a convertir
+        :return mm: numeric, la longitud en mm
+        """
+        try:
+            mil = np.float64(mil)
+        except Exception as e:
+            print('@param "mil" no es numerico.\nException:', e)
+        mm = mil * 0.0254
+        return mm
+
+
     def test(self):
         resultado = True
         resultado = resultado and self.__test_equiv_potencia()
